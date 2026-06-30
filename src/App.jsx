@@ -57,7 +57,10 @@ function App() {
         <main className="grid">
           {articles.map((article, index) => (
             <article key={index} className="card">
-              <span className="card-title">{article.userName} Insights</span>
+              <div className="card-header">
+                <span className="card-category">{article.category}</span>
+                <span className="card-title">{article.title}</span>
+              </div>
               <p className="card-summary">{article.summary}</p>
               <a 
                 href={article.articleUrl} 

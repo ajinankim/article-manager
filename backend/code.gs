@@ -7,10 +7,11 @@ function doGet() {
   
   var result = rows.map(function(row) {
     return {
-      userName: row[0],
-      articleUrl: row[1],
-      summary: row[2], // 요약 데이터
-      timestamp: row[3]
+      title: row[0],
+      category: row[1],
+      summary: row[2],
+      articleUrl: row[3],
+      timestamp: row[4]
     };
   });
   
@@ -44,24 +45,53 @@ function doPost(e) {
 function processGmailEmails() {
   var labelName = "Processed_Articles";
   var label = GmailApp.getUserLabelByName(labelName) || GmailApp.createLabel(labelName);
-  var threads = GmailApp.search("subject:[기사링크공유] -label:" + labelName);
+  var threads = GmailApp.search("subject:[기사등록] -label:" + labelName);
   
+  if (threads.length === 0) {
+    // 대체 검색어 시도 (기존 데이터 호환)
+    threads = GmailApp.search("subject:[기사링크전송] -label:" + labelName);
+  }
+
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   
   threads.forEach(function(thread) {
     var messages = thread.getMessages();
     messages.forEach(function(message) {
-      if (message.getSubject().includes("[기사링크공유]")) {
+      var subject = message.getSubject();
+      if (subject.includes("[기사등록]") || subject.includes("[기사링크전송]")) {
         var body = message.getPlainBody();
-        // 간단한 파싱 로직 (필요에 따라 정규식 수정/강화)
-        // 가정: 본문에 [사용자] [링크] [요약] 순서로 있거나, 정형화된 데이터
-        // 여기서는 임시 테스트용 파싱
-        var userName = "Unknown";
-        var articleUrl = "https://example.com";
-        var summary = body.substring(0, 50); // 본문 일부
+        var lines = body.split('\n');
+        var articleUrl = "";
         
-        sheet.appendRow([userName, articleUrl, summary, new Date()]);
-        thread.addLabel(label);
+        // URL 추출 시도
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+          if (line.startsWith("http")) {
+            articleUrl = line;
+            break;
+          }
+        }
+
+        if (articleUrl) {
+          var userName = message.getFrom().split('<')[0].replace(/"/g, '').trim();
+          var summary = "내용 확인 중..."; // 기본값
+          var category = "기타"; // 기본값
+
+          // 본문에 구조화된 데이터가 있는지 확인
+          // 예: [카테고리] 기술 [요약] 내용...
+          var categoryMatch = body.match(/\[카테고리\]\s*(.*)/);
+          var summaryMatch = body.match(/\[요약\]\s*(.*)/);
+          
+          if (categoryMatch) category = categoryMatch[1].trim();
+          if (summaryMatch) summary = summaryMatch[1].trim();
+          
+          // 기존 시트 구조: [작성자, 링크, 요약, 타임스탬프]
+          // 요청한 새로운 구조: [제목(사용자), 카테고리, 요약, 링크, 타임스탬프]
+          // 일단 기존 구조를 유지하되 컬럼을 확장하거나 매핑을 조정할 필요가 있음
+          // 요청에 따라: 기사제목, 기사카테고리, 기사내용 요약, 기사링크 순으로 저장
+          sheet.appendRow([userName, category, summary, articleUrl, new Date()]);
+          thread.addLabel(label);
+        }
       }
     });
   });
