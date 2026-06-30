@@ -1,50 +1,64 @@
-import { useState } from 'react'
-
-import { useState } from 'react';
-import { auth, provider } from './firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import './App.css';
 
 function App() {
-  const [user, setUser] = useState(null);
-  
-  const article = {
-    title: "기사 제목을 여기에 입력하세요",
-    url: "URL을 여기에 입력하세요",
-    description: "기사 설명을 여기에 입력하세요",
-    image: "https://via.placeholder.com/300x150"
-  };
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogin = async () => {
+  const fetchArticles = async () => {
+    setLoading(true);
     try {
-      const result = await signInWithPopup(auth, provider);
-      setUser(result.user);
+      // 백엔드에서 데이터 가져오기
+      const response = await fetch('https://script.google.com/macros/s/AKfycbzvVPXFuQ_TdhSaAu3xYkSSJZ49aTYWSJJT-JFi9JmaJ-o4bZazobPO8bgNvGmbMhxj/exec');
+      const data = await response.json();
+      setArticles(data);
     } catch (error) {
-      console.error("로그인 실패:", error);
+      console.error("Error fetching articles:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!user) {
-    return (
-      <div style={{ textAlign: 'center', marginTop: '50px' }}>
-        <h1>기사 앱에 오신 것을 환영합니다</h1>
-        <button onClick={handleLogin} style={{ padding: '10px 20px', fontSize: '16px' }}>
-          Google 계정으로 로그인
-        </button>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchArticles();
+  }, []);
+
+  const handleUpdateFromEmail = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('https://script.google.com/macros/s/AKfycbzvVPXFuQ_TdhSaAu3xYkSSJZ49aTYWSJJT-JFi9JmaJ-o4bZazobPO8bgNvGmbMhxj/exec?action=processEmails', {
+        method: 'POST',
+      });
+      const result = await response.json();
+      alert('업데이트 완료: ' + result.message);
+      fetchArticles(); // 데이터 새로고침
+    } catch (error) {
+      console.error("Error updating:", error);
+      alert('업데이트 실패');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div style={{ maxWidth: '300px', margin: '2rem auto', border: '1px solid #ccc', borderRadius: '8px', padding: '1rem', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-      <img src={article.image} alt={article.title} style={{ width: '100%', borderRadius: '4px' }} />
-      <h2>{article.title}</h2>
-      <p>{article.description}</p>
-      <a href={article.url} target="_blank" rel="noopener noreferrer" style={{ color: 'blue', textDecoration: 'underline' }}>
-        기사 읽기
-      </a>
-      <p style={{ marginTop: '1rem', fontSize: '0.8rem' }}>로그인 사용자: {user.displayName}</p>
+    <div className="newsletter-container">
+      <h1>📰 오늘의 뉴스레터</h1>
+      <button onClick={handleUpdateFromEmail} disabled={loading}>
+        {loading ? '처리 중...' : '이메일에서 기사 가져오기'}
+      </button>
+      {loading ? <p style={{textAlign: 'center'}}>로딩 중...</p> : (
+        <div className="article-list">
+          {articles.map((article, index) => (
+            <div key={index} className="card">
+              <h2>{article.userName}의 추천 기사</h2>
+              <p>{article.summary}</p>
+              <a href={article.articleUrl} target="_blank" rel="noopener noreferrer">기사 원문 읽기 →</a>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
