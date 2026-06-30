@@ -7,12 +7,13 @@ function doGet() {
   
   var result = rows.map(function(row) {
     return {
-      title: row[0],
-      userName: row[1],
-      category: row[2],
-      summary: row[3],
-      timestamp: row[4],
-      articleUrl: row[5]
+      title: row[0],      // 기사제목
+      userName: row[1],   // 보낸사람
+      category: row[2],   // 카테고리
+      summary: row[3],    // 기사요약(3줄)
+      timestamp: row[4],  // 날짜
+      articleUrl: row[5], // 링크
+      imageUrl: row[6]    // 이미지 (G컬럼)
     };
   });
   
@@ -22,7 +23,6 @@ function doGet() {
 
 function doPost(e) {
   var action = e.parameter.action;
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   
   if (action === 'processEmails') {
     processGmailEmails();
@@ -32,66 +32,77 @@ function doPost(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  var data = JSON.parse(e.postData.contents);
-  // 데이터 추가: [사용자 이름, 기사 링크, 요약, 타임스탬프]
-  sheet.appendRow([data.userName, data.articleUrl, data.summary, new Date()]);
-  
-  return ContentService.createTextOutput(JSON.stringify({
-    status: 'success',
-    message: 'Data saved successfully'
-  })).setMimeType(ContentService.MimeType.JSON);
+  // 직접 데이터 추가 시 (API용)
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    sheet.appendRow([
+      data.title, 
+      data.userName, 
+      data.category, 
+      data.summary, 
+      new Date(), 
+      data.articleUrl,
+      data.imageUrl
+    ]);
+    
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success',
+      message: 'Data saved successfully'
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'error',
+      message: err.toString()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
-// 이메일에서 기사 링크 공유 확인 및 시트 업데이트
+// 이메일에서 기사 읽어서 시트 업데이트
 function processGmailEmails() {
   var labelName = "Processed_Articles";
   var label = GmailApp.getUserLabelByName(labelName) || GmailApp.createLabel(labelName);
-  var threads = GmailApp.search("subject:[기사등록] -label:" + labelName);
   
+  // [기사등록] 또는 [기사링크전송] 제목 찾기
+  var threads = GmailApp.search("subject:[기사등록] -label:" + labelName);
   if (threads.length === 0) {
-    // 대체 검색어 시도 (기존 데이터 호환)
     threads = GmailApp.search("subject:[기사링크전송] -label:" + labelName);
   }
-
+  
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   
   threads.forEach(function(thread) {
     var messages = thread.getMessages();
     messages.forEach(function(message) {
-      var subject = message.getSubject();
-      if (subject.includes("[기사등록]") || subject.includes("[기사링크전송]")) {
+      if (message.isUnread()) {
+        var subject = message.getSubject();
         var body = message.getPlainBody();
-        var lines = body.split('\n');
         var articleUrl = "";
         
-        // URL 추출 시도
-        for (var i = 0; i < lines.length; i++) {
-          var line = lines[i].trim();
-          if (line.startsWith("http")) {
-            articleUrl = line;
-            break;
-          }
-        }
+        // URL 추출
+        var urlMatch = body.match(/https?:\/\/[^\s]+/);
+        if (urlMatch) articleUrl = urlMatch[0];
 
         if (articleUrl) {
+          // 작성자 이름 추출
           var userName = message.getFrom().split('<')[0].replace(/"/g, '').trim();
-          var summary = "내용 확인 중..."; // 기본값
-          var category = "기타"; // 기본값
+          var title = subject.replace("[기사등록]", "").replace("[기사링크전송]", "").trim();
+          var summary = "내용을 분석 중입니다..."; 
+          var category = "기타";
+          var imageUrl = ""; // 기본값 (추후 AI나 크롤링으로 보강 가능)
 
-          // 본문에 구조화된 데이터가 있는지 확인
-          // 예: [카테고리] 기술 [요약] 내용...
+          // 본문 태그 분석 ([카테고리] 및 [요약])
           var categoryMatch = body.match(/\[카테고리\]\s*(.*)/);
           var summaryMatch = body.match(/\[요약\]\s*(.*)/);
           
           if (categoryMatch) category = categoryMatch[1].trim();
           if (summaryMatch) summary = summaryMatch[1].trim();
           
-          // 기존 시트 구조: [작성자, 링크, 요약, 타임스탬프]
-          // 요청한 새로운 구조: [제목(사용자), 카테고리, 요약, 링크, 타임스탬프]
-          // 일단 기존 구조를 유지하되 컬럼을 확장하거나 매핑을 조정할 필요가 있음
-          // 요청에 따라: 기사제목, 기사카테고리, 기사내용 요약, 기사링크 순으로 저장
-          sheet.appendRow([userName, category, summary, articleUrl, new Date()]);
+          // 시트 순서: [기사제목, 보낸사람, 카테고리, 기사요약(3줄), 날짜, 링크, 이미지]
+          sheet.appendRow([title, userName, category, summary, new Date(), articleUrl, imageUrl]);
+          
           thread.addLabel(label);
+          message.markRead();
         }
       }
     });
