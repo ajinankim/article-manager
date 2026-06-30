@@ -73,13 +73,24 @@ body {
   flex-direction: column;
 }
 
+.card-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.card-category {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
 .card-title {
   font-weight: 700;
   font-size: 1.1rem;
-  margin-bottom: 15px;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--text-main);
 }
 
 .card-summary {
