@@ -93,12 +93,49 @@ body {
   color: var(--text-main);
 }
 
+.category-filter {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.filter-tab {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+
+.filter-tab:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.filter-tab.active {
+  background-color: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.card-meta {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 5px;
+}
+
 .card-summary {
   font-size: 1rem;
   line-height: 1.6;
   color: var(--text-main);
   margin-bottom: 20px;
   flex-grow: 1;
+  white-space: pre-wrap; /* 줄바꿈 렌더링을 위해 추가 */
 }
 
 .card-link {

@@ -8,10 +8,11 @@ function doGet() {
   var result = rows.map(function(row) {
     return {
       title: row[0],
-      category: row[1],
-      summary: row[2],
-      articleUrl: row[3],
-      timestamp: row[4]
+      userName: row[1],
+      category: row[2],
+      summary: row[3],
+      timestamp: row[4],
+      articleUrl: row[5]
     };
   });
   
