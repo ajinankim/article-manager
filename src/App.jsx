@@ -5,6 +5,7 @@ function App() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // 기능 유지
   const fetchArticles = async () => {
     setLoading(true);
     try {
@@ -22,6 +23,7 @@ function App() {
     fetchArticles();
   }, []);
 
+  // 기능 유지
   const handleUpdateFromEmail = async () => {
     try {
       setLoading(true);
@@ -40,22 +42,31 @@ function App() {
   };
 
   return (
-    <div className="newsletter-container">
-      <header className="hero">
-        <h1>기술 트렌드 인사이트</h1>
-        <p>글로벌 기술 변화를 빠르게 파악하세요.</p>
-        <button className="action-btn" onClick={handleUpdateFromEmail} disabled={loading}>
-          {loading ? '처리 중...' : '데이터 업데이트'}
+    <div className="dashboard-container">
+      <header className="site-header">
+        <h1 className="site-title">Tech Insight</h1>
+        <p className="site-subtitle">The latest trends curated for you.</p>
+        <button className="update-button" onClick={handleUpdateFromEmail} disabled={loading}>
+          {loading ? 'Processing...' : 'Sync Newsletter'}
         </button>
       </header>
       
-      {loading ? <p style={{textAlign: 'center'}}>데이터를 불러오는 중입니다...</p> : (
+      {loading ? (
+        <p style={{textAlign: 'center'}}>Loading insights...</p>
+      ) : (
         <main className="article-grid">
           {articles.map((article, index) => (
-            <article key={index} className="card">
-              <h2>{article.userName}의 추천</h2>
-              <p>{article.summary}</p>
-              <a href={article.articleUrl} target="_blank" rel="noopener noreferrer">원문 읽기 →</a>
+            <article key={index} className="article-card">
+              <span className="article-user">{article.userName} recommends</span>
+              <p className="article-summary">{article.summary}</p>
+              <a 
+                href={article.articleUrl} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="read-more"
+              >
+                Read Full Story →
+              </a>
             </article>
           ))}
         </main>
