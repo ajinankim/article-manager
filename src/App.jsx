@@ -42,30 +42,30 @@ function App() {
   };
 
   return (
-    <div className="dashboard-container">
-      <header className="site-header">
-        <h1 className="site-title">Tech Insight</h1>
-        <p className="site-subtitle">The latest trends curated for you.</p>
-        <button className="update-button" onClick={handleUpdateFromEmail} disabled={loading}>
-          {loading ? 'Processing...' : 'Sync Newsletter'}
+    <div className="container">
+      <header className="header">
+        <h1 className="title">TECH INSIGHT</h1>
+        <p className="subtitle">Curated trends from the global tech front.</p>
+        <button className="button" onClick={handleUpdateFromEmail} disabled={loading}>
+          {loading ? 'Processing...' : 'SYNC ARTICLES'}
         </button>
       </header>
       
       {loading ? (
-        <p style={{textAlign: 'center'}}>Loading insights...</p>
+        <p style={{textAlign: 'center'}}>Loading data...</p>
       ) : (
-        <main className="article-grid">
+        <main className="grid">
           {articles.map((article, index) => (
-            <article key={index} className="article-card">
-              <span className="article-user">{article.userName} recommends</span>
-              <p className="article-summary">{article.summary}</p>
+            <article key={index} className="card">
+              <span className="card-title">{article.userName} Insights</span>
+              <p className="card-summary">{article.summary}</p>
               <a 
                 href={article.articleUrl} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="read-more"
+                className="card-link"
               >
-                Read Full Story →
+                Read Article →
               </a>
             </article>
           ))}
